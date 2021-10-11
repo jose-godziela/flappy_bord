@@ -81,6 +81,10 @@ public:
 	Blocks();
 	~Blocks();
 	void set_rec(Rectangle rec);
+	void set_x(int x);
+	void set_y(int y);
+	void set_width(int width);
+	void set_height(int height);
 	void set_status(bool status);
 	Rectangle get_rec();
 	bool get_status();
@@ -97,6 +101,22 @@ Blocks::~Blocks()
 void Blocks::set_rec(Rectangle rec)
 {
 	_rec = rec;
+}
+void Blocks::set_x(int x)
+{
+	_rec.x = x;
+}
+void Blocks::set_y(int y)
+{
+	_rec.y = y;
+}
+void Blocks::set_width(int width)
+{
+	_rec.width = width;
+}
+void Blocks::set_height(int height)
+{
+	_rec.height = height;
 }
 void Blocks::set_status(bool status)
 {
@@ -137,15 +157,13 @@ void init_player()
 
 void init_blocks()
 {
-	Rectangle rec;
-	rec.width = 30;
-	rec.height = 70;
 	//later the blocks will be more, and this will solve me the hassle of declaring them later
 	for (int i = 0; i < CANT_BLOCKS; i++)
 	{
-		rec.x = 600 + 280 * i;
-		rec.y = -GetRandomValue(0,120);
-		blocks->set_rec(rec);
+		blocks->set_x(600+280*i);
+		blocks->set_y(-GetRandomValue(0,40));
+		blocks->set_width(30);
+		blocks->set_height(70);
 		blocks->set_status(true);
 	}
 }
@@ -168,25 +186,37 @@ void init_game()
 
 void update()
 {
-	if (current_screen == MENU)
+	switch (current_screen)
+	{
+	case MENU:
 	{
 		init_player();
 		init_blocks();
+		break;
 	}
-	if (CheckCollisionCircleRec(player->get_pos(), player->get_radius(), blocks->get_rec()))
+	case GAME:
 	{
-		game_over = true;
-		
-	}
-	if(game_over)
-	{
-		frames++;
-		if (frames == GAME_OVER_SCREEN_TIME)
+		if (CheckCollisionCircleRec(player->get_pos(), player->get_radius(), blocks->get_rec()))
 		{
-			current_screen = MENU;
-			frames = 0;
+			game_over = true;
+
 		}
+		if (game_over)
+		{
+			frames++;
+			if (frames == GAME_OVER_SCREEN_TIME)
+			{
+				current_screen = MENU;
+				frames = 0;
+				game_over = false;
+			}
+		}
+		int aux = blocks->get_rec().x;
+		blocks->set_x(aux -= MOVEMENT);
+		break;
 	}
+	}
+	
 }
 
 void draw()
@@ -316,8 +346,6 @@ void play()
 void main()
 {
 	play();
-	fflush(stdin);
-	cin.get();
 }
 
 
