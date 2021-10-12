@@ -343,6 +343,7 @@ void play()
 
 }
 
+//Later check if i need to create a "game" class
 void main()
 {
 	play();
