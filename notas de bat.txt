@@ -1,0 +1,17 @@
+%1, %2, %3, etc son para hacer variables
+Estas se las pasan mediante los comandos post-procesamiento directamente
+
+EJ:
+do_this.bat tiene esto en su texto:
+
+xcopy %1 %2
+
+para poder usarlo, desde visual hay que poner esto:
+
+do_this.bat "Variable 1" "Variable 2"
+
+podemos hacer varios .bat para que hagan diferentes acciones:
+	Mover imagenes
+	Mover musica
+	Crear carpetas
+	etc.

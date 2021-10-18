@@ -7,15 +7,20 @@ const int PLAYER_RADIUS = 24;
 const int MOVEMENT = 5;
 const int CANT_BLOCKS = 1;
 const float GAME_OVER_SCREEN_TIME = 180.0f;
+const int SCREEN_OFFSET = 100;
+const int SCREEN_LEFT_BORDER = 0;
+const float GRAVITY = 10.0f;//temp number
 
 using namespace std;
 
-//Player.cpp
+//Player.h
 //--------------------------------------------------------------------------------------------------------------------------------------
 class Player
 {
 private:
 	Vector2 _pos;
+	float _velocity;
+	float _accel;
 	float _radius;
 	Color _color;
 public:
@@ -23,12 +28,17 @@ public:
 	~Player();
 	void set_pos_x(int x);
 	void set_pos_y(int y);
+	void set_vel(float vel);
+	void set_accel(float accel);
 	void set_radius(float radius);
 	void set_color(Color color);
 	Vector2 get_pos();
+	float get_vel();
+	float get_accel();
 	float get_radius();
 	Color get_color();
 };
+//Player.cpp
 Player::Player()
 {
 	_pos = { 0,0 };
@@ -47,6 +57,14 @@ void Player::set_pos_y(int y)
 {
 	_pos.y = y;
 }
+void Player::set_vel(float vel)
+{
+	_velocity = vel;
+}
+void Player::set_accel(float accel)
+{
+	_accel = accel;
+}
 void Player::set_radius(float radius)
 {
 	_radius = radius;
@@ -58,6 +76,14 @@ void Player::set_color(Color color)
 Vector2 Player::get_pos()
 {
 	return _pos;
+}
+float Player::get_vel()
+{
+	return _velocity;
+}
+float Player::get_accel()
+{
+	return _accel;
 }
 float Player::get_radius()
 {
@@ -77,6 +103,7 @@ class Blocks
 private:
 	Rectangle _rec;
 	bool _status;
+	Color _color;
 public:
 	Blocks();
 	~Blocks();
@@ -86,13 +113,20 @@ public:
 	void set_width(int width);
 	void set_height(int height);
 	void set_status(bool status);
+	void set_color(Color color);
 	Rectangle get_rec();
 	bool get_status();
+	Color get_color();
 };
 
 Blocks::Blocks()
 {
-
+	_rec.x = 0;
+	_rec.y = 0;
+	_rec.height = 0;
+	_rec.width = 0;
+	_status = false;
+	_color = RAYWHITE;
 }
 Blocks::~Blocks()
 {
@@ -122,6 +156,10 @@ void Blocks::set_status(bool status)
 {
 	_status = status;
 }
+void Blocks::set_color(Color color)
+{
+	_color = color;
+}
 Rectangle Blocks::get_rec()
 {
 	return _rec;
@@ -129,6 +167,10 @@ Rectangle Blocks::get_rec()
 bool Blocks::get_status()
 {
 	return _status;
+}
+Color Blocks::get_color()
+{
+	return _color;
 }
 //-----------------------------------------------------------------------------------------------------
 
@@ -151,6 +193,8 @@ void init_player()
 {
 	player->set_radius(PLAYER_RADIUS);
 	player->set_pos_x(80);
+	player->set_vel(0.0f);
+	player->set_accel(0.0f);
 	player->set_pos_y(GetScreenHeight() / 2);
 	player->set_color(RED);
 }
@@ -165,6 +209,7 @@ void init_blocks()
 		blocks->set_width(30);
 		blocks->set_height(70);
 		blocks->set_status(true);
+		blocks->set_color(GREEN);
 	}
 }
 
@@ -211,8 +256,27 @@ void update()
 				game_over = false;
 			}
 		}
-		int aux = blocks->get_rec().x;
-		blocks->set_x(aux -= MOVEMENT);
+		//Update blocks
+		//for(int i = 0; i < MAX_BLOCKS; i++)
+		//blocks->set_x(blocks->get_rec().x - MOVEMENT);
+		if (blocks->get_rec().x < SCREEN_LEFT_BORDER - blocks->get_rec().width)
+		{
+			blocks->set_x(GetScreenWidth() + SCREEN_OFFSET);
+		}
+
+		//Update player
+		player->set_accel(player->get_accel() - (GRAVITY * GetFrameTime()));
+		if (player->get_accel() >= GRAVITY)
+			player->set_accel(GRAVITY);
+
+		player->set_vel(player->get_vel() - (player->get_accel() * GetFrameTime()));
+
+		player->set_pos_y(player->get_pos().y + (player->get_vel() ));
+
+		//std::cout << player->get_vel() << endl;
+		std::cout << "vel: " << player->get_vel() << " accel: " << player->get_accel() << " v - a: " << player->get_vel() - player->get_accel() * GetFrameTime() << endl;
+
+
 		break;
 	}
 	}
@@ -240,7 +304,7 @@ void draw()
 			DrawText("WELCOME TO FLAPPY BORD", GetScreenWidth() / 4, GetScreenHeight() / 2, 30, RED);
 			DrawText("Press enter to start", GetScreenWidth() / 4, GetScreenHeight() / 2 + 80, 15, RED);
 			DrawText("Press C to see the credits", GetScreenWidth() / 4, GetScreenHeight() / 2 + 110, 15, RED);
-			DrawText("version: 0.1", GetScreenWidth() - 100, GetScreenHeight() - 30, 5, RED);
+			DrawText("version: 0.1", GetScreenWidth() - SCREEN_OFFSET, GetScreenHeight() - 30, 5, RED);
 			break;
 		}
 		case CREDITS:
@@ -299,14 +363,13 @@ void input()
 		}
 		case GAME:
 		{
-			if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP))
+
+			if (IsKeyPressed(KEY_SPACE))
 			{
-				player->set_pos_y(player->get_pos().y - MOVEMENT);
+				player->set_accel(0.0f);
+				player->set_vel(-GRAVITY / 4);
 			}
-			if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN))
-			{
-				player->set_pos_y(player->get_pos().y + MOVEMENT);
-			}
+
 			if (IsKeyPressed(KEY_A))
 				current_screen = MENU;
 			break;
