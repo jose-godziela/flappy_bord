@@ -1,178 +1,21 @@
 #include <iostream>
-
-#include "raylib.h"
+#include "Tubes.h"
+#include "Player.h"
 
 const int FPS = 60;
 const int PLAYER_RADIUS = 24;
 const int MOVEMENT = 5;
-const int CANT_BLOCKS = 1;
+const int CANT_TUBES = 1;
 const float GAME_OVER_SCREEN_TIME = 180.0f;
 const int SCREEN_OFFSET = 100;
 const int SCREEN_LEFT_BORDER = 0;
 const float GRAVITY = 10.0f;//temp number
+Player* player;
+Tubes* tubes[CANT_TUBES];
+bool game_over;
+int frames;
 
 using namespace std;
-
-//Player.h
-//--------------------------------------------------------------------------------------------------------------------------------------
-class Player
-{
-private:
-	Vector2 _pos;
-	float _velocity;
-	float _accel;
-	float _radius;
-	Color _color;
-public:
-	Player();
-	~Player();
-	void set_pos_x(int x);
-	void set_pos_y(int y);
-	void set_vel(float vel);
-	void set_accel(float accel);
-	void set_radius(float radius);
-	void set_color(Color color);
-	Vector2 get_pos();
-	float get_vel();
-	float get_accel();
-	float get_radius();
-	Color get_color();
-};
-//Player.cpp
-Player::Player()
-{
-	_pos = { 0,0 };
-	_radius = 0.0f;
-	_color = RAYWHITE;
-}
-Player::~Player()
-{
-	cout << "Bye bye" << endl;
-}
-void Player::set_pos_x(int x)
-{
-	_pos.x = x;
-}
-void Player::set_pos_y(int y)
-{
-	_pos.y = y;
-}
-void Player::set_vel(float vel)
-{
-	_velocity = vel;
-}
-void Player::set_accel(float accel)
-{
-	_accel = accel;
-}
-void Player::set_radius(float radius)
-{
-	_radius = radius;
-}
-void Player::set_color(Color color)
-{
-	_color = color;
-}
-Vector2 Player::get_pos()
-{
-	return _pos;
-}
-float Player::get_vel()
-{
-	return _velocity;
-}
-float Player::get_accel()
-{
-	return _accel;
-}
-float Player::get_radius()
-{
-	return _radius;
-}
-Color Player::get_color()
-{
-	return _color;
-}
-//-----------------------------------------------------------------------------------------------
-
-
-//Blocks.cpp?
-//--------------------------------------------------------------------------------------------------
-class Blocks
-{
-private:
-	Rectangle _rec;
-	bool _status;
-	Color _color;
-public:
-	Blocks();
-	~Blocks();
-	void set_rec(Rectangle rec);
-	void set_x(int x);
-	void set_y(int y);
-	void set_width(int width);
-	void set_height(int height);
-	void set_status(bool status);
-	void set_color(Color color);
-	Rectangle get_rec();
-	bool get_status();
-	Color get_color();
-};
-
-Blocks::Blocks()
-{
-	_rec.x = 0;
-	_rec.y = 0;
-	_rec.height = 0;
-	_rec.width = 0;
-	_status = false;
-	_color = RAYWHITE;
-}
-Blocks::~Blocks()
-{
-
-}
-void Blocks::set_rec(Rectangle rec)
-{
-	_rec = rec;
-}
-void Blocks::set_x(int x)
-{
-	_rec.x = x;
-}
-void Blocks::set_y(int y)
-{
-	_rec.y = y;
-}
-void Blocks::set_width(int width)
-{
-	_rec.width = width;
-}
-void Blocks::set_height(int height)
-{
-	_rec.height = height;
-}
-void Blocks::set_status(bool status)
-{
-	_status = status;
-}
-void Blocks::set_color(Color color)
-{
-	_color = color;
-}
-Rectangle Blocks::get_rec()
-{
-	return _rec;
-}
-bool Blocks::get_status()
-{
-	return _status;
-}
-Color Blocks::get_color()
-{
-	return _color;
-}
-//-----------------------------------------------------------------------------------------------------
 
 enum Current_screen
 {
@@ -183,11 +26,6 @@ enum Current_screen
 	final
 }current_screen;
 //both "start" and "final" are safestates that i can use when there's a problem with the enum functions
-
-Player* player;
-Blocks* blocks;
-bool game_over;
-int frames;
 
 void init_player()
 {
@@ -202,26 +40,29 @@ void init_player()
 void init_blocks()
 {
 	//later the blocks will be more, and this will solve me the hassle of declaring them later
-	for (int i = 0; i < CANT_BLOCKS; i++)
+	for (int i = 0; i < CANT_TUBES; i++)
 	{
-		blocks->set_x(600+280*i);
-		blocks->set_y(-GetRandomValue(0,40));
-		blocks->set_width(30);
-		blocks->set_height(70);
-		blocks->set_status(true);
-		blocks->set_color(GREEN);
+		tubes[i]->set_x(600+280*i);
+		tubes[i]->set_y(-GetRandomValue(0,40));
+		tubes[i]->set_width(30);
+		tubes[i]->set_height(70);
+		tubes[i]->set_status(true);
+		tubes[i]->set_color(GREEN);
 	}
 }
 
 void init_game()
 {
 	InitWindow(800, 450, "Flappy Bord");
+	SetTargetFPS(FPS);
 	player = new Player();
-	blocks = new Blocks();
+	
+	for(int i = 0; i < CANT_TUBES; i++)
+		tubes[i] = new Tubes();
+	
 	game_over = false;
 
 	//for the moment, player will be hardcoded
-
 	init_player();
 	init_blocks();
 	current_screen = MENU;
@@ -241,10 +82,13 @@ void update()
 	}
 	case GAME:
 	{
-		if (CheckCollisionCircleRec(player->get_pos(), player->get_radius(), blocks->get_rec()))
+		for (int i = 0; i < CANT_TUBES; i++)
 		{
-			game_over = true;
+			if (CheckCollisionCircleRec(player->get_pos(), player->get_radius(), tubes[i]->get_rec()))
+			{
+				game_over = true;
 
+			}
 		}
 		if (game_over)
 		{
@@ -257,13 +101,14 @@ void update()
 			}
 		}
 		//Update blocks
-		//for(int i = 0; i < MAX_BLOCKS; i++)
-		//blocks->set_x(blocks->get_rec().x - MOVEMENT);
-		if (blocks->get_rec().x < SCREEN_LEFT_BORDER - blocks->get_rec().width)
+		for(int i = 0; i < CANT_TUBES; i++)
 		{
-			blocks->set_x(GetScreenWidth() + SCREEN_OFFSET);
+			tubes[i]->set_x(tubes[i]->get_rec().x - MOVEMENT);
+			if (tubes[i]->get_rec().x < SCREEN_LEFT_BORDER - tubes[i]->get_rec().width)
+			{
+				tubes[i]->set_x(GetScreenWidth() + SCREEN_OFFSET);
+			}
 		}
-
 		//Update player
 		player->set_accel(player->get_accel() - (GRAVITY * GetFrameTime()));
 		if (player->get_accel() >= GRAVITY)
@@ -271,7 +116,7 @@ void update()
 
 		player->set_vel(player->get_vel() - (player->get_accel() * GetFrameTime()));
 
-		player->set_pos_y(player->get_pos().y + (player->get_vel() ));
+		player->set_pos_y(player->get_pos().y + (player->get_vel()));
 
 		//std::cout << player->get_vel() << endl;
 		std::cout << "vel: " << player->get_vel() << " accel: " << player->get_accel() << " v - a: " << player->get_vel() - player->get_accel() * GetFrameTime() << endl;
@@ -309,8 +154,8 @@ void draw()
 		}
 		case CREDITS:
 		{
-			DrawText("Programming: Felix Godziela", GetScreenWidth() / 2- 50, GetScreenHeight() / 2-  30, 30, RED);
-			DrawText("Press enter to go back", GetScreenWidth() / 2, GetScreenHeight() / 1.5f, 15, RED);
+			DrawText("Programming: Felix Godziela", GetScreenWidth() / 4 - 50, GetScreenHeight() / 2-  30, 30, RED);
+			DrawText("Press enter to go back", GetScreenWidth() / 4, GetScreenHeight() / 1.5f, 15, RED);
 			break;
 		}
 		case GAME:
@@ -318,9 +163,9 @@ void draw()
 			if (!game_over)
 			{
 				DrawCircle(player->get_pos().x, player->get_pos().y, player->get_radius(), player->get_color());
-				//for(int i = 0; i < CANT_BLOCKS; i++)
-				if(blocks/*[i]*/->get_status())
-					DrawRectangleRec(blocks->get_rec(),/*blocks->get_color()*/GRAY);
+				for(int i = 0; i < CANT_TUBES; i++)
+				if(tubes[i]->get_status())
+					DrawRectangleRec(tubes[i]->get_rec(),/*blocks->get_color()*/GRAY);
 				DrawText("Press A to go back to the menu", GetScreenWidth() - 200, GetScreenHeight() - 30, 5, RED);
 			}
 			else
@@ -384,16 +229,14 @@ void de_init()
 	if (player != NULL)
 		delete player;
 
-	if (blocks != NULL)
-		delete blocks;
+	if (tubes != NULL)
+		delete tubes;
 }
 
 
 void play()
 {
 	init_game();
-
-	SetTargetFPS(FPS);
 
 	while (!WindowShouldClose())
 	{
